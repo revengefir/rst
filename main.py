@@ -4,7 +4,7 @@ import platform
 import psutil
 import json
 
-with open("RevengeSystemTool/config.json", mode="r") as config_file:
+with open("rst/config.json", mode="r") as config_file:
     config = json.load(config_file)
 
 

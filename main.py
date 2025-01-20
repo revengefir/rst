@@ -3,6 +3,8 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 import platform
 import psutil
 import json
+import socket
+import speedtest
 
 with open("config.json", mode="r") as config_file:
     config = json.load(config_file)
@@ -12,19 +14,33 @@ with open("config.json", mode="r") as config_file:
 TOKEN = config["token"]
 BOT_USERNAME = config["username"]
 
+print ("Получение сетевой и прочей информации о системе.")
+
+s = speedtest.Speedtest()
+s.get_best_server()
+
+sdownload = (s.download() / 1000000)
+udownload = (s.upload() / 1000000)
+sping = s.results.ping
+
+hostname = socket.gethostname()
+IP = socket.gethostbyname(hostname) 
+
 systeminfo = platform.freedesktop_os_release()
 systemname = systeminfo["NAME"]
 systemver =  systeminfo ["VERSION"]
+
+print ("Готово.")
 
 # Переменные для команд
 
 
 # Info
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Welcome to RST - type /help.")
+    await update.message.reply_text("Добро пожаловать в RST! - пропишите /help.")
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Добро пожаловать в справку о боте RST \n Тут имеется несколько команд \n /cpuc - Процент загрузки CPU \n /ram, /usedram, /availableram - информация об оперативной памяти \n /linver - название и версия операционной системы \n /sent, /recv - информация по отправленным/полученным сетевым пакетам \n /cpu - время работы процессора \n /temp температуры системы")
+    await update.message.reply_text("Добро пожаловать в справку о боте RST \n Тут имеется несколько команд \n /cpuc - Процент загрузки CPU \n /ram, /usedram, /availableram - информация об оперативной памяти \n /linver - название и версия операционной системы \n /sent, /recv - информация по отправленным/полученным сетевым пакетам \n /cpu - время работы процессора \n /temp температуры системы \n Скорость интернета Download/Upload - /download, /upload. Пинг - /ping. IP машины - /ip")
 
 # Baza
 async def cpuc_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -44,6 +60,18 @@ async def linuxversion_command(update: Update, context: ContextTypes.DEFAULT_TYP
     
     
 #Network Features
+
+async def download_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(str(sdownload) + "Mbps")
+
+async def upload_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(str(udownload) + "Mbps")
+
+async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(str(sping) + "MS")
+
+async def ip_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Ваш IP адрес: " + IP)
     
 async def sent_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Отправленные пакеты: " + str((psutil.net_io_counters(pernic=False, nowrap=True).packets_sent)))
@@ -85,6 +113,10 @@ if __name__ == '__main__':
     app.add_handler(CommandHandler('sent', sent_command))
     app.add_handler(CommandHandler('recv', recv_command))
     app.add_handler(CommandHandler('temp', temp_command))
+    app.add_handler(CommandHandler('ip', ip_command))
+    app.add_handler(CommandHandler('download', download_command))
+    app.add_handler(CommandHandler('upload', upload_command))
+    app.add_handler(CommandHandler('ping', ping_command))
     # Register message handler
     app.add_handler(MessageHandler(filters.TEXT, handle_message))
 
